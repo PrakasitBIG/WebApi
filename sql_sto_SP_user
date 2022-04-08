@@ -1,0 +1,48 @@
+USE [test_db]
+GO
+/****** Object:  StoredProcedure [dbo].[SP_User]    Script Date: 4/8/2022 7:19:21 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[SP_User]
+	 @UserId nvarchar(50)
+	,@Username nvarchar(50)
+	,@Email nvarchar(50)
+	,@Password nvarchar(255)
+	,@Fname nvarchar(50)
+	,@Lname nvarchar(50)
+	--,@Profile nvarchar(50) 
+	,@OperationType int
+AS
+BEGIN TRAN
+
+	IF(@OperationType = 1) 
+	BEGIN
+
+		IF EXISTS(SELECT * FROM [User] WHERE Username=@Username)
+		BEGIN
+			ROLLBACK
+				RAISERROR (N'This username already exist !!!',16,1);
+			RETURN
+		END
+		IF EXISTS(SELECT * FROM [User] WHERE Email=@Email)
+		BEGIN
+			ROLLBACK
+				RAISERROR (N'This email already exist !!!',16,1);
+			RETURN
+		END
+
+		SET @UserId = (SELECT COUNT(*) FROM [USER]) + 1
+
+		INSERT INTO [USER] (Userid,Username,Email,[Password],Fname,Lname)
+					VALUES(@Userid,@Username,@Email,@Password,@Fname,@Lname)
+		
+		INSERT INTO [logs_password] (Userid,passwordOld,createdate)
+					VALUES(@Userid,@Password,GETDATE()) 
+
+		SELECT * FROM [USER] WHERE UserID=@UserId
+
+	END
+	
+COMMIT TRAN
